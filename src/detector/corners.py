@@ -22,19 +22,21 @@ def draw_corners(image, corners):
 	return image_return
 
 
-def identify_corners(image, binary, scale, mask=None):
+def identify_corners(image, binary, scale, max_corners, quality_level, mask=None):
 	"""
 	From a grayscale image, a binary image and an optional binary mask, identify corners through Harris corner detection.
 	Corners are then filtered to select only those that are from a convex black shape.
 	:param image: Source grayscale image
 	:param binary: Source binary image
 	:param scale: Scale of Harris detection
+	:param max_corners:
+	:param quality_level:
 	:param mask: Optional binary mask
 	:return: a numpy array of shape (n_corners, 2) containing the corners coordinates
 	"""
 
 	# Detecting corners on the image, allowing a lot of corners close to each-other but with high quality
-	corners = cv2.goodFeaturesToTrack(image, maxCorners=500, qualityLevel=0.01, minDistance=scale//2, mask=mask, useHarrisDetector=True)
+	corners = cv2.goodFeaturesToTrack(image, maxCorners=max_corners, qualityLevel=quality_level, minDistance=scale//2, mask=mask, useHarrisDetector=True)
 	corners = np.int0(corners).reshape((corners.shape[0], 2))
 
 	# We are looking for corners that are 1/4 black and 3/4 white, but perspective can deform them
@@ -44,7 +46,7 @@ def identify_corners(image, binary, scale, mask=None):
 		x, y = corner
 		if not(scale//2 < x < image.shape[1] - scale//2 and scale//2 < y < image.shape[0] - scale//2):
 			continue
-		if 0.9 > np.average(binary[y - scale:y + scale + 1, x - scale:x + scale + 1]) > 0.61:
+		if 0.9 > np.average(binary[y - scale:y + scale + 1, x - scale:x + scale + 1]) > 0.55:
 			true_corners.append([x, y])
 
 	return np.array(true_corners)
