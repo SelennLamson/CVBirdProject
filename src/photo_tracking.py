@@ -21,13 +21,16 @@ while True:
 	except (ValueError, AssertionError):
 		pass
 
+params: DetectorParameters = DetectorParameters()
+params.max_dim = 800
+params.draw_preprocessed = True
+params.draw_corners = True
+params.draw_quads = True
+params.return_preview = False
+
 src_img = cv2.imread(base_path + '/' + images[ans])
 src_img = cv2.cvtColor(src_img, cv2.COLOR_BGR2RGB)
-bin_mats, elapsed = detect_markers(src_img,
-						  max_dim=800,
-						  draw_preprocessed=False,
-						  draw_corner=True,
-						  draw_quads=True)
+bin_mats, elapsed = detect_markers(src_img, params)
 print("Elapsed time: %.3fs" % elapsed)
 
 for mat in bin_mats:

@@ -1,6 +1,6 @@
 import numpy as np
 
-def detect_quads(bin_image, corners, samples=20, precision=0.95, min_dist=0.01, max_dist=1):
+def detect_quads(bin_image, corners, samples=20, precision=0.95, min_dist=0.01, max_dist=1, orth_dst=0.05):
 	"""
 	From the binary image and the corners detected in it, finds convex quadrilaterals formed by them.
 	:param bin_image: np(height, width), binary image (pure black and white pixels)
@@ -19,9 +19,10 @@ def detect_quads(bin_image, corners, samples=20, precision=0.95, min_dist=0.01, 
 	max_dist_px = big_dim * max_dist
 	nc = corners.shape[0]
 
-	# --- EDGES COMPUTATION ---
-	orth_dst = 0.05
+	if nc < 4:
+		return np.zeros((0, 4), dtype=int)
 
+	# --- EDGES COMPUTATION ---
 	# Start coordinate of each edge
 	#   (nc, nc, 2)
 	edges_start = corners[:, np.newaxis, :].repeat(nc, axis=1)
@@ -76,16 +77,17 @@ def detect_quads(bin_image, corners, samples=20, precision=0.95, min_dist=0.01, 
 	# Checking for each side of each edge if it passes the black/white threshold
 	#   (nc, nc)
 	values_R = (np.sum(values_R, axis=2) / samples)
-	whites_R = values_R > precision
+	# whites_R = values_R > precision
 	blacks_R = (1 - values_R) > precision
 
 	values_L = (np.sum(values_L, axis=2) / samples)
-	whites_L = values_L > precision
+	# whites_L = values_L > precision
 	blacks_L = (1 - values_L) > precision
 
 	# An edge is validated if both sides pass the threshold and they are not of the same color
 	#   (nc, nc)
-	is_edge = np.bitwise_or(np.bitwise_and(whites_R, blacks_L), np.bitwise_and(blacks_R, whites_L))
+	# is_edge = np.bitwise_or(np.bitwise_and(whites_R, blacks_L), np.bitwise_and(blacks_R, whites_L))
+	is_edge = np.bitwise_xor(blacks_L, blacks_R)
 
 	# We filter edges that are too big or too small
 	#   (nc, nc)
@@ -97,11 +99,14 @@ def detect_quads(bin_image, corners, samples=20, precision=0.95, min_dist=0.01, 
 
 	# Edges are identified, we extract them.
 	edges_c1, edges_c2 = np.where(is_edge)
-	edges = list(zip(edges_c1, edges_c2))
+	edges = np.array(list(zip(edges_c1, edges_c2)), dtype=int)
+
+	if len(edges) > 0:
+		edges_dists = edges_dists[edges[:, 0], edges[:, 1]]
 
 	# --- QUADS COMPUTATION ---
 	quads = []
-	prod_vecs = []
+	# prod_vecs = []
 
 	# Every edge gets a chance to begin a quad as e1
 	for i1 in range(len(edges)):
@@ -164,45 +169,29 @@ def detect_quads(bin_image, corners, samples=20, precision=0.95, min_dist=0.01, 
 					if ec2 not in e3 or ec3 not in e3:
 						continue
 
+					# Checking that smallest edge is not smaller than 20% of the biggest edge
+					max_edge = max(edges_dists[i1], edges_dists[i2], edges_dists[i3], edges_dists[i4])
+					min_edge = min(edges_dists[i1], edges_dists[i2], edges_dists[i3], edges_dists[i4])
+					if min_edge < 0.3 * max_edge:
+						continue
+
+					v1 = edges_vecs[ec1, ec2]
+					v2 = edges_vecs[ec2, ec3]
+					v3 = edges_vecs[ec3, ec4]
+					v4 = edges_vecs[ec4, ec1]
+					v12 = np.sign(np.cross(v1, v2))
+					v23 = np.sign(np.cross(v2, v3))
+					v34 = np.sign(np.cross(v3, v4))
+					v41 = np.sign(np.cross(v4, v1))
+					if v12 == 0 or v23 == 0 or v34 == 0 or v41 == 0:
+						continue
+					if not v12 == v23 == v34 == v41:
+						continue
+
 					# The quad is validated, save its corners in the right order
-					quads.append((ec1, ec2, ec3, ec4))
+					if v12 > 0:
+						quads.append((ec1, ec2, ec3, ec4))
+					else:
+						quads.append((ec4, ec3, ec2, ec1))
 
-					# We save the vectors of the edges to compute the convexness
-					# We save  (e1,     e2,         e3,         e4,      e1)  to compute:
-					#           |      /   \       /   \       /   \      |
-					#          (e1 x e2  ,  e2 x e3  ,  e3 x e4  ,  e4 x e1)
-					prod_vecs.append(edges_vecs[ec1, ec2])
-					prod_vecs.append(edges_vecs[ec2, ec3])
-					prod_vecs.append(edges_vecs[ec3, ec4])
-					prod_vecs.append(edges_vecs[ec4, ec1])
-					prod_vecs.append(edges_vecs[ec1, ec2])
-
-	if len(prod_vecs) == 0:
-		return np.zeros((0, 4), dtype=int)
-
-	# Computing the sign of the cross-product from one edge to the next one
-	# (cf. above comment)
-	prod_vecs = np.array(prod_vecs)
-	cross_prods = np.sign(np.cross(prod_vecs[:-1, :], prod_vecs[1:, :])).tolist()
-
-	# If the sign of the edge cross-product is the same for all corners of a shape, it is convex
-	convex_quads = []
-	for i, q in enumerate(quads):
-		# There is 4 cross-products per quad, but also a parasite cross product every 4 usefull ones
-		si = 5 * i
-
-		# Checking equality by shifting the array of 1 position against itself
-		# ...  ,  e1 x e2  ,  e2 x e3  ,  e3 x e4  ,  e4 x e1  ,  ...
-		#          [si           :          si+2]
-		#                 ==          ==          ==
-		#                     [si+1          :          si+3]
-		if cross_prods[si:si + 2] == cross_prods[si + 1:si + 3]:
-
-			# If the cross products are negative, then quad is defined clockwise
-			# We reverse so that every quads are defined anti-clockwise
-			if cross_prods[si] > 0:
-				convex_quads.append(q)
-			else:
-				convex_quads.append(list(reversed(q)))
-
-	return np.array(convex_quads, dtype=int)
+	return np.array(quads, dtype=int)

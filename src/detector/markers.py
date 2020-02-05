@@ -13,6 +13,10 @@ def extract_binary_matrices(image, corners, quads, n_bits=8):
 	"""
 
 	nq = quads.shape[0]
+
+	if nq == 0:
+		return np.zeros((0, n_bits, n_bits), dtype=bool)
+
 	quad_corners = corners[quads.ravel(), :].reshape(nq, 4, 2)
 
 	maximum_c = np.max(quad_corners, axis=1)
@@ -38,6 +42,9 @@ def binary_check(bin_mats, aruco_dict, c_bits, border, error_border, error_conte
 	s = 2*border + c_bits									# Total size of the marker side
 	nm = bin_mats.shape[0]									# Number of markers
 	nb = (c_bits**2)//8 + (1 if (c_bits**2) % 8 > 0 else 0)	# Number of bytes to represent data
+
+	if nm == 0:
+		return None
 
 	byteslist = aruco_dict.bytesList.ravel()
 	dic_bits = np.unpackbits(byteslist).reshape(len(aruco_dict.bytesList), 4, nb*8)

@@ -41,7 +41,7 @@ def resize(src_img, max_dim):
 	return resized
 
 
-def preprocess(src_img, apply_bilateral=True, binary_mode=binary_average):
+def preprocess(src_img, apply_bilateral=True, binary_mode=binary_average, binary_mask=None):
 	"""
 	Preprocesses an RGB image into a grayscale image and a binary image.
 	:param src_img: source RGB image
@@ -52,6 +52,11 @@ def preprocess(src_img, apply_bilateral=True, binary_mode=binary_average):
 	grayscale = cv2.cvtColor(src_img, cv2.COLOR_RGB2GRAY)
 
 	if apply_bilateral:
-		grayscale = cv2.bilateralFilter(grayscale, 10, 80, 80)
+		grayscale = cv2.bilateralFilter(grayscale, 7, 50, 50)
 
-	return grayscale, binary_mode(grayscale).astype(np.uint8)
+	if binary_mask is not None:
+		mask = binary_mask(grayscale)
+	else:
+		mask = None
+
+	return grayscale, binary_mode(grayscale).astype(np.uint8), mask
