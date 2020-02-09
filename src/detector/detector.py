@@ -11,35 +11,35 @@ from .markers import *
 class DetectorParameters:
 	def __init__(self):
 		# Preprocessing & corners
-		self.max_dim = None 				#max dimension, the other will be rescale
-		self.apply_filter = None 			#None, bilinear, gaussian
-		self.binary_mode = binary_average  
-		self.binary_mask = None	 			#Function to use to generate a mask for corner detection
-		self.corners_scale = 10				#
-		self.max_corners = 500				#maximum number of corner to detect
-		self.corners_quality = 0.01			#minimum treshold for a valid corner 
+		self.max_dim = None 				# Max dimension, the other will be rescale
+		self.apply_filter = None 			# None, bilinear, gaussian
+		self.binary_mode = binary_average   # Binarization function (see preprocessing.py)
+		self.binary_mask = None	 			# Function to use to generate a mask for corner detection
+		self.corners_scale = 10				# Window in which corners are searched (in pixels)
+		self.max_corners = 500				# Maximum number of corner to detect
+		self.corners_quality = 0.01			# Minimum treshold for a valid corner
 
 		# Edges
-		self.edge_samples = 20
-		self.edge_precision = 0.95
-		self.edge_min_dist = 0.01
-		self.edge_max_dist = 0.8
-		self.orthogonal_dist = 0.05
+		self.edge_samples = 20				# Number of samples taken along edges to validate them
+		self.edge_precision = 0.95			# Percentage of samples that must agree to validate an edge
+		self.edge_min_dist = 0.01			# Minimum length of an edge (in percentage of frame's biggest dimension)
+		self.edge_max_dist = 0.8			# Maximum length of an edge (in percentage of frame's biggest dimension)
+		self.orthogonal_dist = 0.05			# Distance that we walk away from the edge to take samples on both sides (in percentage of edge length)
 
 		# Markers
-		self.n_bits = 4
-		self.border = 2
-		self.aruco_dict = cv2.aruco.DICT_4X4_250
-		self.error_border = 0.1
-		self.error_content = 0.05
+		self.n_bits = 4						# Number of bits on the side of the markers' content
+		self.border = 2						# Width of the markers' border, in bits
+		self.aruco_dict = cv2.aruco.DICT_4X4_250	# Aruco dictionnary to use (should be consistent with n_bits)
+		self.error_border = 0.1				# Percentage of error allowed on the border
+		self.error_content = 0.05			# Percentage of error allowed on the content
 
 		# Debug
-		self.draw_preprocessed = False
-		self.draw_binary = False
-		self.draw_mask = False
-		self.draw_corners = False
-		self.draw_quads = False
-		self.return_preview = False
+		self.draw_preprocessed = False		# Should the detector draw the preprocessed image as debug
+		self.draw_binary = False			# Should the detector draw the binary image as debug
+		self.draw_mask = False				# Should the detector draw the binary mask as debug
+		self.draw_corners = False			# Should the detector overlay detected edges on image
+		self.draw_quads = False				# Should the detector overlay detected quads on image
+		self.return_preview = False			# Should the detector return the debug images, instead of plotting them directly
 
 
 def detect_markers(src_img, params: DetectorParameters):
