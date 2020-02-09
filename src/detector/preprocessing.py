@@ -21,6 +21,17 @@ def binary_median(grayscale):
 	"""
 	return grayscale > np.median(grayscale)
 
+def intensity_mask(grayscale):
+	'''
+	return the intensity mask compute with sobel filters
+	'''
+	grad_x = cv2.Scharr(grayscale, cv2.CV_32F, 1, 0)
+	grad_y = cv2.Scharr(grayscale, cv2.CV_32F, 0, 1)
+	
+	intensity = (grad_x ** 2 + grad_y ** 2) ** 0.5
+	
+	return (intensity > 100).astype(np.uint8)
+
 
 def resize(src_img, max_dim):
 	"""
@@ -41,18 +52,20 @@ def resize(src_img, max_dim):
 	return resized
 
 
-def preprocess(src_img, apply_bilateral=True, binary_mode=binary_average, binary_mask=None):
+def preprocess(src_img, apply_filter='bilinear', binary_mode=binary_average, binary_mask=None):
 	"""
 	Preprocesses an RGB image into a grayscale image and a binary image.
 	:param src_img: source RGB image
-	:param apply_bilateral: should bilateral filter be applied on image?
+	:param apply_filter: should a filter be applied on image?
 	:param binary_mode: binary threshold function
 	:return: (grayscale, binary) resized and preprocessed images
 	"""
 	grayscale = cv2.cvtColor(src_img, cv2.COLOR_RGB2GRAY)
 
-	if apply_bilateral:
+	if apply_filter == 'bilinear':
 		grayscale = cv2.bilateralFilter(grayscale, 7, 50, 50)
+	elif apply_filter == 'gaussian':
+		grayscale = cv2.GaussianBlur(grayscale, (5, 5), 4)
 
 	if binary_mask is not None:
 		mask = binary_mask(grayscale)

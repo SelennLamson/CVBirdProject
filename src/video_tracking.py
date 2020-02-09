@@ -41,14 +41,16 @@ end_percent = 1
 params: DetectorParameters = DetectorParameters()
 params.max_dim = 800
 params.draw_binary = False
-params.draw_preprocessed = True
+params.draw_preprocessed = False
 params.draw_corners = True
 params.draw_quads = True
+params.draw_mask = False
 params.return_preview = True
 
-params.apply_bilateral = True
+params.apply_filter = 'bilateral'
 params.binary_mode = binary_midgray
-params.corners_scale = 5
+params.binary_mask = intensity_mask
+params.corners_scale = 6
 params.edge_samples = 20
 params.edge_precision = 0.95
 params.edge_max_dist = 0.15
@@ -57,8 +59,8 @@ params.orthogonal_dist = 0.05
 
 # Launching of tracking
 
-start_frame = nb_frames * start_percent // 1
-end_frame = nb_frames * end_percent // 1
+start_frame = int(nb_frames * start_percent // 1)
+end_frame = int(nb_frames * end_percent // 1)
 range_it = tqdm(range(end_frame - start_frame))
 
 for i in range_it:

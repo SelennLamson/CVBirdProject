@@ -11,13 +11,13 @@ from .markers import *
 class DetectorParameters:
 	def __init__(self):
 		# Preprocessing & corners
-		self.max_dim = None
-		self.apply_bilateral = True
-		self.binary_mode = binary_average
-		self.binary_mask = None
-		self.corners_scale = 10
-		self.max_corners = 500
-		self.corners_quality = 0.01
+		self.max_dim = None 				#max dimension, the other will be rescale
+		self.apply_filter = None 			#None, bilinear, gaussian
+		self.binary_mode = binary_average  
+		self.binary_mask = None	 			#Function to use to generate a mask for corner detection
+		self.corners_scale = 10				#
+		self.max_corners = 500				#maximum number of corner to detect
+		self.corners_quality = 0.01			#minimum treshold for a valid corner 
 
 		# Edges
 		self.edge_samples = 20
@@ -53,7 +53,7 @@ def detect_markers(src_img, params: DetectorParameters):
 	start_time = time.time()
 
 	resized = resize(src_img, params.max_dim)
-	grayscale, binary, mask = preprocess(resized, apply_bilateral=params.apply_bilateral, binary_mode=params.binary_mode, binary_mask=params.binary_mask)
+	grayscale, binary, mask = preprocess(resized, apply_filter=params.apply_filter, binary_mode=params.binary_mode, binary_mask=params.binary_mask)
 	corners = identify_corners(grayscale, binary, params.corners_scale, params.max_corners, params.corners_quality, mask=mask)
 	quads = detect_quads(binary, corners, samples=params.edge_samples, precision=params.edge_precision, min_dist=params.edge_min_dist, max_dist=params.edge_max_dist, orth_dst=params.orthogonal_dist)
 	bin_mats = extract_binary_matrices(binary, corners, quads, n_bits=params.n_bits + params.border * 2)
