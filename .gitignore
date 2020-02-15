@@ -5,7 +5,8 @@ __pycache__/
 
 .DS_Store
 /data/.DS_Store
-
+/data/markers/*
+!/data/markers/.keep
 # C extensions
 *.so
 
