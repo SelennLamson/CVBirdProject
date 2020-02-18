@@ -3,6 +3,7 @@
 
 from cv2 import aruco as aruco
 import cv2
+import numpy as np
 
 DICT_44_250 = aruco.getPredefinedDictionary(aruco.DICT_4X4_250)
 
@@ -32,12 +33,16 @@ def generate_markers(kind = 'target'):
     range_ = MARKER_TARGET_RANGE if kind == 'target' \
                 else MARKER_OBSTACLE_RANGE if kind == 'obstacle' \
                 else MARKER_OTHER
-                
+
+    margin = 50
+    base = np.ones((200 + 2 * margin, 200 + 2 * margin), dtype=np.uint8) * 255
     
     #build the markers and save them to disk
     for idx in range_:
         curr_marker = aruco.drawMarker(dictionary=DICT_44_250, id=idx, sidePixels=200, borderBits=2)
-        cv2.imwrite(f'../data/markers/marker_{kind}_{idx}.png', curr_marker)
+        curr = base.copy()
+        curr[margin:200+margin, margin:200+margin] = curr_marker
+        cv2.imwrite(f'../data/markers/marker_{idx}.png', curr)
         
 def generate_all_markers():
     generate_markers('target')

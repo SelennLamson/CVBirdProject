@@ -1,26 +1,32 @@
-import cv2
-from cv2 import aruco
-import numpy as np
+from src.markers_generator import *
 
-ardict = aruco.Dictionary_get(aruco.DICT_4X4_250)
-
-print(ardict.bytesList.shape)
-# N_MARKERS x N_ x 4
-
-byteslist = ardict.bytesList.ravel()#.reshape(250, 4, 2)
-arr = np.unpackbits(byteslist).reshape(250, 4, 16)
+generate_all_markers()
 
 
 
-
-m = arr[5]
-
-print(m)
-
-for i in m:
-	for a in range(4):
-		print(i[a*4:a*4+4])
-	print("---")
+# import cv2
+# from cv2 import aruco
+# import numpy as np
+#
+# ardict = aruco.Dictionary_get(aruco.DICT_4X4_250)
+#
+# print(ardict.bytesList.shape)
+# # N_MARKERS x N_ x 4
+#
+# byteslist = ardict.bytesList.ravel()#.reshape(250, 4, 2)
+# arr = np.unpackbits(byteslist).reshape(250, 4, 16)
+#
+#
+#
+#
+# m = arr[5]
+#
+# print(m)
+#
+# for i in m:
+# 	for a in range(4):
+# 		print(i[a*4:a*4+4])
+# 	print("---")
 
 # for i in range(4):
 # 	m1 = m[i]
