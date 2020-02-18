@@ -134,3 +134,4 @@ dmypy.json
 
 data/videos/
 data/treated_videos/
+/data/simulation/frames/
