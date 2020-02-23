@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-
+from model.Marker import Marker
+from model.Frame import Frame
 import numpy as np
 import cv2
 
-def markerPosition(image, corners, quads, quad_height, mtx, dist):
+def marker_position(image, corners, quads, quad_height, mtx, dist, Marker, Frame):
+
     mtx = np.array([[6.5746697944293521e+002, 0, 500],
                     [0, 6.5746697944293521e+002, 375],
                     [0, 0, 1]])
@@ -12,22 +14,6 @@ def markerPosition(image, corners, quads, quad_height, mtx, dist):
                      [0],
                      [0],
                      [-5.7843597214487474e-001]])
-
-    def draw(img, corners, imgpts):
-        '''
-        X axis in blue color, Y axis in green color and Z axis in red color.
-        '''
-        meanx = 0
-        meany = 0
-        for i in range(4):
-            meanx += corners[i][0]
-            meany += corners[i][1]
-        a = [round(meanx / 4).astype(int), round(meany / 4).astype(int)]
-        quads = tuple(a)
-        img = cv2.line(img, quads, tuple(imgpts[0].ravel()), (255, 0, 0), 3)
-        img = cv2.line(img, quads, tuple(imgpts[1].ravel()), (0, 255, 0), 3)
-        img = cv2.line(img, quads, tuple(imgpts[2].ravel()), (0, 0, 255), 3)
-        return img
 
     quad_corners = corners[quads.ravel(), :].reshape(quads.shape[0], 4, 2).astype(np.float32)
 
@@ -49,3 +35,20 @@ def markerPosition(image, corners, quads, quad_height, mtx, dist):
         rotations.append((rvecs, marker))
         translations.append((tvecs, marker))
     return rotations, translations
+
+
+def draw(img, corners, imgpts):
+    '''
+    X axis in blue color, Y axis in green color and Z axis in red color.
+    '''
+    meanx = 0
+    meany = 0
+    for i in range(4):
+        meanx += corners[i][0]
+        meany += corners[i][1]
+    a = [round(meanx / 4).astype(int), round(meany / 4).astype(int)]
+    quads = tuple(a)
+    img = cv2.line(img, quads, tuple(imgpts[0].ravel()), (255, 0, 0), 3)
+    img = cv2.line(img, quads, tuple(imgpts[1].ravel()), (0, 255, 0), 3)
+    img = cv2.line(img, quads, tuple(imgpts[2].ravel()), (0, 0, 255), 3)
+    return img
