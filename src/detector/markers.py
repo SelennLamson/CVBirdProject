@@ -59,11 +59,15 @@ def binary_check(bin_mats, aruco_dict, c_bits, border, error_border, error_conte
 	flatten[:, nb*8-c_bits**2:] = content
 
 	errors = np.sum(flatten[:, np.newaxis, np.newaxis, :] != dic_bits[np.newaxis, :, :, :], axis=3)
+	best_orientations = np.argmin(errors, axis=2)
 	errors = np.min(errors, axis=2)
 
 	index = np.argmin(errors, axis=1)
+	best_orientations = np.array([best_orientations[i, index[i]] for i in range(len(index))], dtype=int)
+	best_orientations = (4 - best_orientations) % 4
+
 	errors = np.min(errors, axis=1)
 	passes = np.bitwise_and(errors / c_bits**2 < error_content, borders)
 
-	return passes * index - 1 + passes
+	return passes * index - 1 + passes, best_orientations
 

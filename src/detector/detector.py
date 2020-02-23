@@ -57,7 +57,7 @@ def detect_markers(src_img, params: DetectorParameters):
 	corners = identify_corners(grayscale, binary, params.corners_scale, params.max_corners, params.corners_quality, mask=mask)
 	quads = detect_quads(binary, corners, samples=params.edge_samples, precision=params.edge_precision, min_dist=params.edge_min_dist, max_dist=params.edge_max_dist, orth_dst=params.orthogonal_dist)
 	bin_mats = extract_binary_matrices(binary, corners, quads, n_bits=params.n_bits + params.border * 2)
-	indexes = binary_check(bin_mats, cv2.aruco.Dictionary_get(params.aruco_dict), params.n_bits, params.border, params.error_border, params.error_content)
+	indices, orientations = binary_check(bin_mats, cv2.aruco.Dictionary_get(params.aruco_dict), params.n_bits, params.border, params.error_border, params.error_content)
 
 	elapsed = time.time() - start_time
 
@@ -67,7 +67,7 @@ def detect_markers(src_img, params: DetectorParameters):
 			params.draw_corners or
 			params.draw_quads or
 			params.return_preview):
-		return bin_mats, elapsed
+		return indices, orientations, elapsed
 
 	if params.draw_mask and mask is not None:
 		preview = cv2.cvtColor(mask*255, cv2.COLOR_GRAY2RGB)
@@ -82,11 +82,15 @@ def detect_markers(src_img, params: DetectorParameters):
 		preview = draw_corners(preview, corners)
 
 	if params.draw_quads:
-		for c1, c2, c3, c4 in quads:
+		for i, c in enumerate(quads):
+			c1, c2, c3, c4 = c
+
 			cv2.line(preview, tuple(corners[c1]), tuple(corners[c2]), (255, 0, 0), 2)
 			cv2.line(preview, tuple(corners[c2]), tuple(corners[c3]), (255, 0, 0), 2)
 			cv2.line(preview, tuple(corners[c3]), tuple(corners[c4]), (255, 0, 0), 2)
 			cv2.line(preview, tuple(corners[c4]), tuple(corners[c1]), (255, 0, 0), 2)
+
+			cv2.circle(preview, tuple(corners[c[orientations[i]]]), 2, (255, 255, 0), 3)
 
 	if params.return_preview:
 		return bin_mats, elapsed, preview
@@ -95,4 +99,4 @@ def detect_markers(src_img, params: DetectorParameters):
 	plt.imshow(preview)
 	plt.show()
 
-	return bin_mats, elapsed
+	return indices, orientations, elapsed
