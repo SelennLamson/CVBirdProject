@@ -135,8 +135,3 @@ dmypy.json
 
 data/videos/
 data/treated_videos/
-/data/simulation/frames/
-/data/simulation/videos/bottom_400x400.avi
-/data/simulation/videos/front_400x400.avi
-/data/simulation/videos/bottom_600x600.avi
-/data/simulation/videos/front_600x600.avi

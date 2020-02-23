@@ -30,11 +30,8 @@ params.return_preview = False
 
 src_img = cv2.imread(base_path + '/' + images[ans])
 src_img = cv2.cvtColor(src_img, cv2.COLOR_BGR2RGB)
-bin_mats, elapsed = detect_markers(src_img, params)
+indices, orientations, elapsed = detect_markers(src_img, params)
 print("Elapsed time: %.3fs" % elapsed)
 
-for mat in bin_mats:
-	plt.figure(figsize=(5, 5))
-	plt.imshow(mat, cmap='gray')
-	plt.show()
+print(indices, orientations)
 
