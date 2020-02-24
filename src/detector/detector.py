@@ -109,8 +109,8 @@ def detect_markers(src_img, params: DetectorParameters):
     plt.imshow(preview)
     plt.show()
 
-    return indices, orientations, elapsed
-
+    #return indices, orientations, elapsed
+    return markersList
 
 def compute_all_markers_position(quads, indices, orientation, quad_height=77):
     markersList = []
