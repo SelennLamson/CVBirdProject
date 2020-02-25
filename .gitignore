@@ -133,5 +133,6 @@ dmypy.json
 .pyre/
 /config.json
 
-data/videos/
+data/videos/*
+!data/videos/.gitkeep
 data/treated_videos/
