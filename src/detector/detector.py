@@ -64,17 +64,13 @@ def detect_markers(src_img, params: DetectorParameters):
                                          binary_mask=params.binary_mask)
     corners = identify_corners(grayscale, binary, params.corners_scale, params.max_corners, params.corners_quality,
                                mask=mask)
-    print(corners)
     quads = detect_quads(binary, corners, samples=params.edge_samples, precision=params.edge_precision,
                          min_dist=params.edge_min_dist, max_dist=params.edge_max_dist, orth_dst=params.orthogonal_dist)
-    print(quads)
     bin_mats = extract_binary_matrices(binary, corners, quads, n_bits=params.n_bits + params.border * 2)
     indices, orientations = binary_check(bin_mats, cv2.aruco.Dictionary_get(params.aruco_dict), params.n_bits,
                                          params.border, params.error_border, params.error_content)
-    print('indices', indices)
     markersList = compute_all_markers_position(corners, quads, indices, orientations, quad_height=params.quad_height)
 
-    print('markerList', markerList)
     #markersList = []
 
     elapsed = time.time() - start_time
@@ -144,7 +140,7 @@ def compute_all_markers_position(corners, quads, indices, orientations, quad_hei
         # if the quad is a valid marker, eg, indice <> -1, identify it's location
         if marker_id > -1:
             # from corner index in quads, retrieve the coordinates
-            quads_coordinates = np.array([corners[i] for i in quad])
+            quads_coordinates = np.array([corners[i] for i in quad], dtype=np.float32)
             # compute location and get a Marker object
             marker = compute_a_marker_position(marker_id, quads_coordinates, orientations, quad_height)
             markersList.append(marker)
@@ -170,16 +166,14 @@ def compute_a_marker_position(markerId, quad, orientations, quad_height):
                     [0., 0., 1.]])
     dist = np.array([[0.00350049,  0.16295218,  0.01726926,  0.00689938, -0.16205415]])
 
-    print('quad', quad)
     objp = np.array([[0, quad_height / 2, quad_height / 2], [0, -quad_height / 2, quad_height / 2],
                      [0, -quad_height / 2, -quad_height / 2], [0, quad_height / 2, -quad_height / 2]],
                     dtype=np.float32)
-    print('objp', objp)
     axis = np.float32([[0, 0, 1], [1, 0, 0], [0, -1, 0]]).reshape(-1, 3)
 
     ret, rvecs, tvecs = cv2.solvePnP(objp, quad, mtx, dist)
     # build the marker object
-    marker = Marker(markerId, quad, tvecs, rvecs)
+    marker = Marker(markerId, quad, tvecs.reshape(-1), rvecs.reshape(-1))
     # imgpt, jac = cv2.projectPoints(axis, rvecs, tvecs, mtx, dist)
 
     return marker

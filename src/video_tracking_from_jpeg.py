@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 
 from detector.detector import detect_markers, DetectorParameters
 from detector.preprocessing import *
+from CameraPosTracker import CameraPosTracker
+from model.Frame import Frame
 
 
 base_path = '../data/simulation/videos/bottom_600x600'
@@ -43,17 +45,18 @@ params.edge_precision = 0.95
 params.edge_max_dist = 0.15
 params.orthogonal_dist = 0.05
 
+# initiate the camera tracker
+ref_frame = Frame(0)
+ref_frame.addMarkersAndRotFromJson(view='bottom', filterVisible=False, addMarkers=True)
+camera_pos_tracker = CameraPosTracker(ref_frame)
 
 # Launching of tracking
-
 start_frame = int(nb_frames * start_percent // 1)
 end_frame = int(nb_frames * end_percent // 1)
 range_it = tqdm(range(start_frame, end_frame))
 
-#for i in range_it:
-for i in [10]:
+for i in range_it:
 	frame = cv2.imread(f'{base_path}/{frame_pattern}{i}.jpg')
-	print("processing frame", i)
 	if i < start_frame:
 		continue
 	if i > end_frame:
@@ -61,7 +64,14 @@ for i in [10]:
 
 	if not (frame is None):
 		markers, elapsed, out_frame = detect_markers(frame, params)
-		print('len markers', len(markers))
+		print('frame', i, '- len markers', len(markers))
+
+		# compute camera location from the markers of the current frame
+		curr_frame = Frame(i)
+		curr_frame.addMarkersAndRotFromJson(view='bottom')
+		curr_frame.markers = markers
+		camera_pos_tracker.computeMoveFromRefFrame(curr_frame, debug=False)
+
 
 		if out is None:
 			out = cv2.VideoWriter(treated_path + '/treated_' + base_path.split('/')[-1] + '.avi',
@@ -90,3 +100,5 @@ print(("Processing finished.\n" +
 	  .format(min_elapsed, max_elapsed, avg_elapsed))
 
 out.release()
+
+camera_pos_tracker.plotTrajectory()

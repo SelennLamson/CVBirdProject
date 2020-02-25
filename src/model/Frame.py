@@ -32,12 +32,13 @@ class Frame():
         
         
     def addMarkersAndRotFromJson(self, folder = '../data/simulation/labels_600x600/', view = 'front',
-                                 filterVisible = True):
+                                 addMarkers = False, filterVisible = True):
         """
         Add markers provided by a JSON file (simulation)
 
         Parameters
         ----------
+        addMarkers : do we add the markers from the json
         folder : string
             folder where are store the JSON files.
         view : string
@@ -67,13 +68,13 @@ class Frame():
         #iterate on markers, if visible add them to frame
         markersList = cameraOfInterest['markers']
         
-        
-        for marker in markersList:
-            if marker['id'] in visibleMarkers or (not filterVisible):
-                currMarker = Marker(marker['id'], pos = marker['location'], 
-                                    rot = marker['rotation'])
-                self.markers.append(currMarker)
-                
+        if addMarkers:
+            for marker in markersList:
+                if marker['id'] in visibleMarkers or (not filterVisible):
+                    currMarker = Marker(marker['id'], pos = marker['location'],
+                                        rot = marker['rotation'])
+                    self.markers.append(currMarker)
+
         #processing the rotation
         self.camRot = np.array(cameraOfInterest['rotation'])
         
@@ -115,11 +116,10 @@ class Frame():
                 
         return np.array(result)
         
-     
-#%%        
+
 def test_Frame():
     frame = Frame(36)
-    frame.addMarkersAndRotFromJson(filterVisible=False)
+    frame.addMarkersAndRotFromJson(filterVisible=False, addMarkers=True)
     for mark in frame.markers:
         print(mark)
     print(frame.getMarkersId())
