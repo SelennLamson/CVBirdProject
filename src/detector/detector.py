@@ -1,14 +1,14 @@
-import cv2
 import matplotlib.pyplot as plt
 import time
+import cv2
 
-from .preprocessing import *
-from .corners import *
-from .quads import *
-from .markers import *
+from src.detector.preprocessing import *
+from src.detector.corners import *
+from src.detector.quads import *
+from src.detector.markers import *
 
-from model.Marker import Marker
-# from model.Frame import Frame
+from src.model.Marker import *
+#from src.model.Frame import Frame
 import numpy as np
 
 
@@ -67,7 +67,7 @@ def detect_markers(src_img, params: DetectorParameters):
     indices, orientations = binary_check(bin_mats, cv2.aruco.Dictionary_get(params.aruco_dict), params.n_bits,
                                          params.border, params.error_border, params.error_content)
 
-    markersList = compute_all_markers_position(quads, indices, orientation, quad_height=77)
+    markersList = compute_all_markers_position(quads, indices, orientations, quad_height=77)
 
     elapsed = time.time() - start_time
 
@@ -109,27 +109,32 @@ def detect_markers(src_img, params: DetectorParameters):
     plt.imshow(preview)
     plt.show()
 
-    #return indices, orientations, elapsed
+    # return indices, orientations, elapsed
     return markersList
 
-def compute_all_markers_position(quads, indices, orientation, quad_height=77):
+
+def compute_all_markers_position(quads, indices, orientations, quad_height=77):
     markersList = []
     for i, quad in enumerate(quads):
-        marker = compute_a_marker_position(i, quad, indices, orientation, quad_height)
+        marker = compute_a_marker_position(i, quad, indices, orientations, quad_height)
         markersList.append(marker)
     return markersList
 
 
-def compute_a_marker_position(i, quad, indices, orientation, quad_height):
-    mtx = np.array([[6.5746697944293521e+002, 0, 500],
-                    [0, 6.5746697944293521e+002, 375],
-                    [0, 0, 1]])
+def compute_a_marker_position(i, quad, indices, orientations, quad_height):
+    mtx = np.array([[218.691514, 0., 302.14874821],
+                    [0., 222.53881408, 302.19506909],
+                    [0., 0., 1.]])
+    dist = np.array([[0.00350049,  0.16295218,  0.01726926,  0.00689938, -0.16205415]])
+    # mtx = np.array([[6.5746697944293521e+002, 0, 500],
+    #               [0, 6.5746697944293521e+002, 375],
+    #                [0, 0, 1]])
 
-    dist = np.array([[-4.1802327176423804e-001],
-                     [5.0715244063187526e-001],
-                     [0],
-                     [0],
-                     [-5.7843597214487474e-001]])
+    #dist = np.array([[-4.1802327176423804e-001],
+    #                 [5.0715244063187526e-001],
+    #                 [0],
+    #                 [0],
+    #                [-5.7843597214487474e-001]])
 
     objp = np.array([[0, quad_height / 2, quad_height / 2], [0, -quad_height / 2, quad_height / 2],
                      [0, -quad_height / 2, -quad_height / 2], [0, quad_height / 2, -quad_height / 2]],
@@ -143,33 +148,3 @@ def compute_a_marker_position(i, quad, indices, orientation, quad_height):
 
     return marker
 
-
-def marker_position(corners, quads, mtx, dist, orientations, indices, quad_height=77):
-    quad_corners = corners[quads.ravel(), :].reshape(quads.shape[0], 4, 2).astype(np.float32)
-
-    # Position of each corner of a marker from its centre on x, y, z
-    objp = np.array([[0, quad_height / 2, quad_height / 2], [0, -quad_height / 2, quad_height / 2],
-                     [0, -quad_height / 2, -quad_height / 2], [0, quad_height / 2, -quad_height / 2]], dtype=np.float32)
-
-    axis = np.float32([[0, 0, 1], [1, 0, 0], [0, -1, 0]]).reshape(-1, 3)
-
-    rotations = []
-    translations = []
-    markersList = []
-    for i, quad in enumerate(quads):
-        if indices[i] > -1:
-            # cv2 funtion
-            # build the marker object
-            marker = Marker(indices[i], )
-            # append to list
-            markersList.append(marker)
-    for marker in quad_corners:
-        ret, rvecs, tvecs = cv2.solvePnP(objp, marker, mtx, dist)
-
-        # imgpt, jac = cv2.projectPoints(axis, rvecs, tvecs, mtx, dist)
-        # image1 = draw(img_markers, marker, imgpt)
-
-        rotations.append((rvecs, marker))
-        translations.append((tvecs, marker))
-
-    return rotations, translations
