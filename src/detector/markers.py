@@ -44,7 +44,7 @@ def binary_check(bin_mats, aruco_dict, c_bits, border, error_border, error_conte
 	nb = (c_bits**2)//8 + (1 if (c_bits**2) % 8 > 0 else 0)	# Number of bytes to represent data
 
 	if nm == 0:
-		return None
+		return [], []
 
 	byteslist = aruco_dict.bytesList.ravel()
 	dic_bits = np.unpackbits(byteslist).reshape(len(aruco_dict.bytesList), 4, nb*8)

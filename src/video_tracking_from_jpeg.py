@@ -9,26 +9,13 @@ from detector.detector import detect_markers, DetectorParameters
 from detector.preprocessing import *
 
 
-base_path = '../data/videos'
+base_path = '../data/simulation/videos/bottom_600x600'
 treated_path = '../data/treated_videos'
-videos = os.listdir(base_path)
+frame_pattern = 'frame_bottom_'
+frames = os.listdir(base_path)
+nb_frames = len(frames)
 
-while True:
-	try:
-		print("Videos in " + base_path + ":")
-		for i, n in enumerate(videos):
-			print("- [{}] ".format(i) + n)
-		ans = int(input("Select a video: "))
-		assert 0 <= ans < len(videos)
-		break
-	except (ValueError, AssertionError):
-		pass
-
-vidcap = cv2.VideoCapture(base_path + '/' + videos[ans])
-nb_frames = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT))
-fps = vidcap.get(cv2.CAP_PROP_FPS)
-
-print("Processing {} frames at {:.2f} fps.".format(nb_frames, fps))
+print("Processing {} frames".format(nb_frames))
 
 out = None
 
@@ -61,24 +48,26 @@ params.orthogonal_dist = 0.05
 
 start_frame = int(nb_frames * start_percent // 1)
 end_frame = int(nb_frames * end_percent // 1)
-range_it = tqdm(range(end_frame - start_frame))
+range_it = tqdm(range(start_frame, end_frame))
 
-for i in range_it:
-	success, frame = vidcap.read()
-
+#for i in range_it:
+for i in [10]:
+	frame = cv2.imread(f'{base_path}/{frame_pattern}{i}.jpg')
+	print("processing frame", i)
 	if i < start_frame:
 		continue
 	if i > end_frame:
 		break
 
-	if success:
+	if not (frame is None):
 		markers, elapsed, out_frame = detect_markers(frame, params)
+		print('len markers', len(markers))
 
 		if out is None:
-			out = cv2.VideoWriter(treated_path + '/treated_' + videos[ans],
+			out = cv2.VideoWriter(treated_path + '/treated_' + base_path.split('/')[-1] + '.avi',
 								  apiPreference=cv2.CAP_FFMPEG,
 								  fourcc=cv2.VideoWriter_fourcc(*'mp4v'),
-								  fps=fps,
+								  fps=1,
 								  frameSize=(out_frame.shape[1], out_frame.shape[0]),
 								  isColor=True)
 

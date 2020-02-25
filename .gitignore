@@ -134,5 +134,8 @@ dmypy.json
 /config.json
 
 data/videos/*
+data/simulation/videos/*
 !data/videos/.gitkeep
 data/treated_videos/
+
+.idea/
