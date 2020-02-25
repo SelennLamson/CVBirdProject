@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from scipy.optimize import least_squares
+from scipy.spatial.transform import Rotation
 from scipy.linalg import norm
 import numpy as np
 import json
@@ -63,5 +64,17 @@ def solve_LS_camera_problem(P1, P2, X0=[0, 0, 0]):
     res_lsq = least_squares(least_square_camera_problem, X0, args=(P1, P2))
     
     return res_lsq['x']
+    
+def test_trans_rot():
+    P_front_m= [ -135.0302734375, -3.1635982990264893, -38.12091064453125 ]
+    P_bottom_m = [ 15.010517120361328, -3.1635730266571045, -31.127927780151367 ]
+    rotation_front_in_bottom = [ -47.423492431640625, 90, -47.423492431640625 ]
+    P_front_bottom = [ -23.110374450683594, -2.8448926059354562e-06, 103.90232849121094 ]
+    
+    rot_mat = Rotation.from_rotvec(np.deg2rad(rotation_front_in_bottom)).inv()
+    
+    P_bottom_m_hat = rot_mat.as_matrix() @ P_front_m + P_front_bottom
+    
+    print(P_bottom_m_hat)
     
 

@@ -31,7 +31,8 @@ class Frame():
         self.camRot = np.array(cam_rot)
         
         
-    def addMarkersAndRotFromJson(self, folder = '../data/simulation/labels600x600/', view = 'front'):
+    def addMarkersAndRotFromJson(self, folder = '../data/simulation/labels_600x600/', view = 'front',
+                                 filterVisible = True):
         """
         Add markers provided by a JSON file (simulation)
 
@@ -41,6 +42,8 @@ class Frame():
             folder where are store the JSON files.
         view : string
             'front' for front camera, 'rear' for rear one
+        filterVisible : boolean
+            True if we want to proceed only visible markers
 
         Returns
         -------
@@ -66,12 +69,17 @@ class Frame():
         
         
         for marker in markersList:
-            if marker['id'] in visibleMarkers:
-                currMarker = Marker(marker['id'], pos = marker['location'], rot = marker['rotation'])
+            if marker['id'] in visibleMarkers or (not filterVisible):
+                currMarker = Marker(marker['id'], pos = marker['location'], 
+                                    rot = marker['rotation'])
                 self.markers.append(currMarker)
                 
         #processing the rotation
         self.camRot = np.array(cameraOfInterest['rotation'])
+        
+        #processing the location of the camera
+        #only for validation purpose
+        self.real_position_HIDDEN = np.array(cameraOfInterest['location'])
 
         
     def getMarkersId(self):
@@ -111,7 +119,7 @@ class Frame():
 #%%        
 def test_Frame():
     frame = Frame(36)
-    frame.addMarkersAndRotFromJson()
+    frame.addMarkersAndRotFromJson(filterVisible=False)
     for mark in frame.markers:
         print(mark)
     print(frame.getMarkersId())
