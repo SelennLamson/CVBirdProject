@@ -169,7 +169,10 @@ def compute_a_marker_position(markerId, quad, quad_height):
                     [0., 0.,1.]])
     dist = np.array([[1.30824056e-03, -2.92691888e-03, -2.45282270e-04, -9.55173831e-06, 1.38489429e-03]])
 
-
+    mtx1 = np.array([[214.39165339, 0., 302.52855448],
+                    [0., 214.75900295, 299.10275073],
+                    [0., 0., 1.]])
+    dist1 = np.array([[6.01735946e-04, -7.20592910e-04, -8.77851932e-05, 3.71261700e-04, -2.85035690e-04]])
     #objp = np.array([[0, -quad_height / 2, quad_height / 2], [0, quad_height / 2, quad_height / 2],
     #                 [0, quad_height / 2, -quad_height / 2], [0, -quad_height / 2, -quad_height / 2]],
     #                dtype=np.float32)
