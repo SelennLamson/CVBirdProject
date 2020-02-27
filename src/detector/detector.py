@@ -188,23 +188,40 @@ def compute_a_marker_position(markerId, quad, quad_height):
 
     ret, rvecs, tvecs = cv2.solvePnP(objp, quad, mtx, dist)
 
-    #Mr = R.from_rotvec([[rvecs[0], 0, 0],
-    #                    [0, -rvecs[1], 0],
-    #                    [0, 0, rvecs[2]]])
-
-    #Mr.as_euler('xzy', degrees=True)
     rotation_matrix, jacobian = cv2.Rodrigues(rvecs)
 
     rotation = R.from_matrix(rotation_matrix)
-    euler = rotation.as_euler('XYZ', degrees=True)
+    basis_rot = R.from_matrix(M)
+
+    if markerId == 107:
+        target = np.array([105.60964965820313, 5.3242621421813965, 85.461669921875])
+    else:
+        target = np.array([-48.664871215820313, -65.705078125, -135.521728515625])
+
+    print((basis_rot * rotation).as_matrix())
+    euler = (basis_rot * rotation).as_euler('xyz', degrees=True)
     euler[0] *= -1
-    euler[2] *= -1
-    print(euler)
+    euler[1] *= -1
 
     # build the marker object
     tvec = np.dot(M, tvecs)
     #print(rvec)
     marker = Marker(markerId, quad, tvec.reshape(-1), euler.reshape(-1))
     # imgpt, jac = cv2.projectPoints(axis, rvecs, tvecs, mtx, dist)
+
+
+    print(markerId)
+    print('Rot:', euler)
+    # print('Loc:', tvec.T)
+    print('-'*30)
+
+    # {
+    #     "id": 107,
+    #     "rotation": [105.60964965820313, 5.3242621421813965, 85.461669921875]
+    # },
+    # {
+    #     "id": 106,
+    #     "rotation": [-48.664871215820313, -65.705078125, -135.521728515625]
+    # },
 
     return marker
