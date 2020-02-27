@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import time
 import cv2
-
+from scipy.spatial.transform import Rotation as R
 from src.detector.preprocessing import *
 from src.detector.corners import *
 from src.detector.quads import *
@@ -187,10 +187,24 @@ def compute_a_marker_position(markerId, quad, quad_height):
                   [0, -1, 0]])
 
     ret, rvecs, tvecs = cv2.solvePnP(objp, quad, mtx, dist)
+
+    #Mr = R.from_rotvec([[rvecs[0], 0, 0],
+    #                    [0, -rvecs[1], 0],
+    #                    [0, 0, rvecs[2]]])
+
+    #Mr.as_euler('xzy', degrees=True)
+    rotation_matrix, jacobian = cv2.Rodrigues(rvecs)
+
+    rotation = R.from_matrix(rotation_matrix)
+    euler = rotation.as_euler('XYZ', degrees=True)
+    euler[0] *= -1
+    euler[2] *= -1
+    print(euler)
+
     # build the marker object
     tvec = np.dot(M, tvecs)
-    rvec = np.rad2deg(rvecs)
-    marker = Marker(markerId, quad, tvec.reshape(-1), rvec.reshape(-1))
+    #print(rvec)
+    marker = Marker(markerId, quad, tvec.reshape(-1), euler.reshape(-1))
     # imgpt, jac = cv2.projectPoints(axis, rvecs, tvecs, mtx, dist)
 
     return marker
