@@ -178,20 +178,15 @@ def compute_a_marker_position(markerId, quad, quad_height):
     #                dtype=np.float32)
 
     # Marker's corners coordinates in its reference system
-    objp = np.array([[quad_height / 2, -quad_height / 2, 0], [quad_height / 2, quad_height / 2, 0],
-                     [-quad_height / 2, quad_height / 2, 0], [-quad_height / 2, -quad_height / 2, 0]],
+    objp = np.array([[-quad_height / 2, -quad_height / 2, 0], [quad_height / 2, -quad_height / 2, 0],
+                     [quad_height / 2, quad_height / 2, 0], [-quad_height / 2, quad_height / 2, 0]],
                     dtype=np.float32)
-
-    M_object = np.array([[0, 1, 0],
-                         [-1, 0, 0],
-                         [0, 0, -1]])
-    objct = objp @ M_object
 
     M = np.array([[0, 0, 1],
                   [1, 0, 0],
                   [0, -1, 0]])
 
-    ret, rvecs, tvecs = cv2.solvePnP(objct, quad, mtx, dist)
+    ret, rvecs, tvecs = cv2.solvePnP(objp, quad, mtx, dist)
 
     rotation_matrix, jacobian = cv2.Rodrigues(rvecs)
 
@@ -203,16 +198,14 @@ def compute_a_marker_position(markerId, quad, quad_height):
     else:
         target = np.array([-48.664871215820313, -65.705078125, -135.521728515625])
 
-    strategy = ['xyz', 'xzy', 'yxz', 'yzx', 'zxy', 'zyx', 'XYZ', 'XZY', 'YXZ', 'YZX', 'ZXY', 'ZYX']
-
-    for strat in strategy:
-        euler = (basis_rot * rotation).as_euler(strat, degrees=True)
-        euler[0] *= -1
-        euler[1] *= -1
-        print(strat, euler)
+    print((basis_rot * rotation).as_matrix())
+    euler = (basis_rot * rotation).as_euler('xyz', degrees=True)
+    euler[0] *= -1
+    euler[1] *= -1
 
     # build the marker object
     tvec = np.dot(M, tvecs)
+    #print(rvec)
     marker = Marker(markerId, quad, tvec.reshape(-1), euler.reshape(-1))
     # imgpt, jac = cv2.projectPoints(axis, rvecs, tvecs, mtx, dist)
 
@@ -222,7 +215,7 @@ def compute_a_marker_position(markerId, quad, quad_height):
     # print('Loc:', tvec.T)
     print('-'*30)
 
-    # { yzx
+    # {
     #     "id": 107,
     #     "rotation": [105.60964965820313, 5.3242621421813965, 85.461669921875]
     # },
