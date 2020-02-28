@@ -60,7 +60,10 @@ def preprocess(src_img, apply_filter='bilinear', binary_mode=binary_average, bin
 	:param binary_mode: binary threshold function
 	:return: (grayscale, binary) resized and preprocessed images
 	"""
-	grayscale = cv2.cvtColor(src_img, cv2.COLOR_RGB2GRAY)
+	if src_img.shape[2] > 1:
+		grayscale = cv2.cvtColor(src_img, cv2.COLOR_RGB2GRAY)
+	else:
+		grayscale = src_img
 
 	if apply_filter == 'bilinear':
 		grayscale = cv2.bilateralFilter(grayscale, 7, 50, 50)

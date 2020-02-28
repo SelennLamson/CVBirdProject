@@ -64,13 +64,19 @@ for i in range_it:
 
 	if not (frame is None):
 		markers, elapsed, out_frame = detect_markers(frame, params)
-		print('frame', i, '- len markers', len(markers))
+		# print('frame', i, '- len markers', len(markers))
 
 		# compute camera location from the markers of the current frame
 		curr_frame = Frame(i)
 		curr_frame.addMarkersAndRotFromJson(view='bottom')
 		curr_frame.markers = markers
-		camera_pos_tracker.computeMoveFromRefFrame(curr_frame, debug=False)
+		try:
+			camera_pos_tracker.computeMoveFromRefFrame(curr_frame, debug=False)
+		except ValueError:
+			print('Error in frame', i)
+			for m in curr_frame.markers:
+				print(m.id)
+			print(curr_frame.markers)
 
 
 		if out is None:

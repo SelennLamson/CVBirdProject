@@ -8,6 +8,7 @@ from src.detector.quads import *
 from src.detector.markers import *
 
 from src.model.Marker import *
+from scipy.spatial.transform import Rotation as R
 #from src.model.Frame import Frame
 import numpy as np
 
@@ -36,6 +37,7 @@ class DetectorParameters:
         self.aruco_dict = cv2.aruco.DICT_4X4_250  # Aruco dictionnary to use (should be consistent with n_bits)
         self.error_border = 0.1  # Percentage of error allowed on the border
         self.error_content = 0.05  # Percentage of error allowed on the content
+        self.quad_height = 133.33 # height in real world of the markers
 
         # Debug
         self.draw_preprocessed = False  # Should the detector draw the preprocessed image as debug
@@ -44,7 +46,6 @@ class DetectorParameters:
         self.draw_corners = False  # Should the detector overlay detected edges on image
         self.draw_quads = False  # Should the detector overlay detected quads on image
         self.return_preview = False  # Should the detector return the debug images, instead of plotting them directly
-        self.quad_height = (400/3) # height in real world of the markers
 
 
 def detect_markers(src_img, params: DetectorParameters):
@@ -57,8 +58,6 @@ def detect_markers(src_img, params: DetectorParameters):
 
     start_time = time.time()
 
-    markerList = []
-
     resized = resize(src_img, params.max_dim)
     grayscale, binary, mask = preprocess(resized, apply_filter=params.apply_filter, binary_mode=params.binary_mode,
                                          binary_mask=params.binary_mask)
@@ -69,10 +68,7 @@ def detect_markers(src_img, params: DetectorParameters):
     bin_mats = extract_binary_matrices(binary, corners, quads, n_bits=params.n_bits + params.border * 2)
     indices, orientations = binary_check(bin_mats, cv2.aruco.Dictionary_get(params.aruco_dict), params.n_bits,
                                          params.border, params.error_border, params.error_content)
-    print('indices:', indices)
     markersList = compute_all_markers_position(corners, quads, indices, orientations, quad_height=params.quad_height)
-    print('markerlist:', markersList)
-    #markersList = []
 
     elapsed = time.time() - start_time
 
@@ -82,7 +78,7 @@ def detect_markers(src_img, params: DetectorParameters):
             params.draw_corners or
             params.draw_quads or
             params.return_preview):
-        return indices, orientations, elapsed
+        return markersList, elapsed
 
     if params.draw_mask and mask is not None:
         preview = cv2.cvtColor(mask * 255, cv2.COLOR_GRAY2RGB)
@@ -135,22 +131,27 @@ def compute_all_markers_position(corners, quads, indices, orientations, quad_hei
 
     # initiate the marker list
     markersList = []
+    ids = []
 
     # iterate on quads
-    for quad, marker_id, rotation in zip(quads, indices, orientations):
+    for quad, marker_id, orientation in zip(quads, indices, orientations):
+        # To avoid adding a marker with the same ID twice
+        if marker_id in ids:
+            continue
+        else:
+            ids.append(marker_id)
+
         # if the quad is a valid marker, eg, indice <> -1, identify it's location
         if marker_id > -1:
             # from corner index in quads, retrieve the coordinates
             quads_coordinates = np.array([corners[i] for i in quad], dtype=np.float32)
-            quads_coordinates = np.vstack((quads_coordinates, quads_coordinates))
-            quads_coordinates_oriented = quads_coordinates[rotation:rotation+4]
             # compute location and get a Marker object
-            marker = compute_a_marker_position(marker_id, quads_coordinates_oriented, quad_height)
+            marker = compute_a_marker_position(marker_id, quads_coordinates, quad_height, orientation)
             markersList.append(marker)
     return markersList
 
 
-def compute_a_marker_position(markerId, quad, quad_height):
+def compute_a_marker_position(markerId, quad, quad_height, orientation):
     """
     for a given marker, compute it's location in space
     Parameters
@@ -177,20 +178,34 @@ def compute_a_marker_position(markerId, quad, quad_height):
     #                 [0, quad_height / 2, -quad_height / 2], [0, -quad_height / 2, -quad_height / 2]],
     #                dtype=np.float32)
 
+
     # Marker's corners coordinates in its reference system
     objp = np.array([[-quad_height / 2, -quad_height / 2, 0], [quad_height / 2, -quad_height / 2, 0],
                      [quad_height / 2, quad_height / 2, 0], [-quad_height / 2, quad_height / 2, 0]],
                     dtype=np.float32)
 
-    M = np.array([[0, 0, 1],
-                  [1, 0, 0],
-                  [0, -1, 0]])
+    # Computing the rotation to apply to marker-space points, to reflect the found orientation
+    total_rotation = np.array([[1, 0, 0],
+                               [0, 1, 0],
+                               [0, 0, 1]]) # This is identity matrix
+    rotation_90z = np.array([[0, 1, 0],
+                             [-1, 0, 0],
+                             [0, 0, 1]]) # This is 90 degrees rotation around z matrix
+    for _ in range(orientation):
+        total_rotation = rotation_90z @ total_rotation # We apply a 0/90/180/270 degrees rotation around z depending on marker orientation
 
-    ret, rvecs, tvecs = cv2.solvePnP(objp, quad, mtx, dist)
-    # build the marker object
-    tvec = np.dot(M, tvecs)
-    rvec = np.rad2deg(rvecs)
-    marker = Marker(markerId, quad, tvec.reshape(-1), rvec.reshape(-1))
-    # imgpt, jac = cv2.projectPoints(axis, rvecs, tvecs, mtx, dist)
+    # Find transformation vectors between camera frame and marker frame
+    ret, rvecs, tvecs = cv2.solvePnP((total_rotation @ objp.T).T, quad, mtx, dist)
 
-    return marker
+    # Convert obtained rotation vectors to UE4 euler angles
+    marker_rotation_matrix, jacobian = cv2.Rodrigues(rvecs)
+    ue4_marker_rotation = R.from_matrix(marker_rotation_matrix)
+    ue4_marker_eulers = ue4_marker_rotation.as_euler('zxy', degrees=True)
+
+    # Build the translation vector transformed to UE4 coordinates
+    transformation_matrix = np.array([[0, 0, 1],
+                                      [1, 0, 0],
+                                      [0, -1, 0]])
+    ue4_location = np.dot(transformation_matrix, tvecs)
+
+    return Marker(markerId, quad, ue4_location.reshape(-1), ue4_marker_eulers.reshape(-1))
